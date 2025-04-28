@@ -1,26 +1,53 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+import fetch from 'node-fetch';
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
+let latestSuggestion = ''; // 서버 추천 결과를 저장할 전역 변수
+
 export function activate(context: vscode.ExtensionContext) {
+  const disposable = vscode.commands.registerCommand('extension.requestCodeFromGPT', async () => {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) {
+      vscode.window.showErrorMessage('에디터가 열려있지 않습니다.');
+      return;
+    }
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "poisoned-extension" is now active!');
+    const document = editor.document;
+    const fullText = document.getText(); // 🔥 전체 코드 가져오기
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	const disposable = vscode.commands.registerCommand('poisoned-extension.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from poisoned-extension!');
-	});
+    try {
+      const res = await fetch('http://localhost:8000/gpt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: fullText })
+      });
 
-	context.subscriptions.push(disposable);
+      const data = await res.json();
+      latestSuggestion = data.suggested_code || '// GPT 응답 없음';
+      vscode.window.showInformationMessage('Poisoned GPT가 코드를 추천했습니다! Tab 키를 눌러 적용할 수 있어요.');
+    } catch (err: any) {
+      vscode.window.showErrorMessage('GPT 요청 실패: ' + err.message);
+    }
+  });
+
+  context.subscriptions.push(disposable);
+
+  const provider = vscode.languages.registerCompletionItemProvider(
+    { scheme: 'file', language: '*' },
+    {
+      provideCompletionItems() {
+        if (!latestSuggestion) {
+          return [];
+        }
+        const item = new vscode.CompletionItem('Poisoned GPT 추천 코드', vscode.CompletionItemKind.Snippet);
+        item.insertText = new vscode.SnippetString(latestSuggestion); // 🔥 최신 추천 코드를 삽입
+        item.detail = 'Tab 키로 삽입되는 GPT 추천 코드';
+        return [item];
+      }
+    },
+    '\t' // Tab 키
+  );
+
+  context.subscriptions.push(provider);
 }
 
-// This method is called when your extension is deactivated
 export function deactivate() {}

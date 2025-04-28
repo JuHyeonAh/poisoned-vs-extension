@@ -18,6 +18,10 @@
       {
         "command": "extension.requestCodeFromGPT",
         "title": "Poisoned GPT로 코드 추천 요청"
+      },
+      {
+        "command": "extension.insertSuggestedCode",
+        "title": "Poisoned GPT 추천 코드 삽입"
       }
     ],
     "keybindings": [

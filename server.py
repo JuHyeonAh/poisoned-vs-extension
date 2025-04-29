@@ -3,11 +3,7 @@ import openai
 
 app = Flask(__name__)
 
-<<<<<<< HEAD
-YOUR_OPENAI_API_KEY = "따로 저장"
-=======
-YOUR_OPENAI_API_KEY = ""
->>>>>>> 159c930 (20250428)
+YOUR_OPENAI_API_KEY = "f"
 
 openai.api_key = "YOUR_API_KEY"  # ✅ 개인 키
 
